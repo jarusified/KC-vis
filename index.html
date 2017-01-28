@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<style>
+ #box{
+     position : absolute;
+     top : 0px;
+     left: 0px;
+ }
+ .bar {
+     fill : red;
+ }
+ .bar:hover{
+     fill : blue;
+ }
+ svg{
+     font-size: 22px;
+     stroke-width : 2px;
+     background: #fff;
+ }
+#heading{
+    font-size: 32px;
+    color: #771818
+}
+#month{
+    font-size: 28px;
+    color: #bd5858;
+    position: absolute;
+    left : 800px;
+}
+</style>
+<body>
+    <div id="heading"> Kansas City crime rate (2014-15) </div>
+    <div id="month"> </div>
+    <svg width="960" height="720""> </svg>
+</body>
+<script src= "https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var width = window.innerWidth;
+var height = window.innerHeight;
+var map = {
+    "0" : "January",
+    "1" : "February",
+    "2" : "March",
+    "3" : "April",
+    "4" : "May",
+    "5" : "June",
+    "6" : "July",
+    "7" : "August",
+    "8" : "September",
+    "9" : "October",
+    "10" : "November",
+    "11" : "December",
+    "12" : "End of data"
+};
+d3.csv("sorted_crime_data.csv", function(text){
+   return text;
+}, function(error,data){
+    if(error) { throw error; }
+
+    var sorted_data = data.sort(function(x,y){
+	return d3.ascending(x[2], y[2]);
+    });
+
+    var crimes_date = sorted_data[0][2];
+    var crimes_count = 0;
+    var crimes_women_count = 0;
+    var crimes_men_count = 0;
+    var crimes_unknown_count = 0;
+    var crimes_level_per_day = 0;
+    var average_crimes_count = 270;
+    var crimes_per_day =[];
+    var offence_codes = {
+	'101':"10",
+	'121':"9",
+	'151':"10",
+	'201':"8",
+	'210':"7",
+	'220':"5",
+	'230':"6",
+	'301':"7",
+	'302':"6",
+	'401':"5",
+	'402':"4",
+	'403':"5",
+	'501':"6",
+	'502':"7",
+	'610':"6",
+	'620':"5",
+	'630':"6",
+	'640':"7",
+	'650':"7",
+	'660':"6",
+	'670':"7",
+	'680':"7",
+	'690':"7",
+	'702':"8",
+	'799':"6",
+	'801':"7",
+	'802':"8",
+	'820':"7",
+	'831':"8",
+	'840':"5",
+	'842':"4",
+	'901':"3",
+	'902':"2",
+	'1001':"3",
+	'1002':"5",
+	'1050':"2",
+	'1120':"1",
+	'1122':"6",
+	'1130':"7",
+	'1170':"8",
+	'1188':"3",
+	'1197':"6",
+	'1198':"4",
+	'1201':"4",
+	'1352':"5",
+	'1401':"1",
+	'1402':"2",
+	'1546':"3",
+	'1648':"4",
+	'1650':"6",
+	'1651':"6",
+	'1701':"7",
+	'1702':"4",
+	'1742':"6",
+	'1750':"7",
+	'1760':"4",
+	'1849':"3",
+	'1850':"8",
+	'2001':"8",
+	'2031':"8",
+	'2040':"6",
+	'2041':"7",
+	'2054':"9",
+	'2100':"10",
+	'2201':"2",
+	'2402':"3",
+	'2403':"5",
+	'2530':"5",
+	'2601':"4",
+	'2602':"6",
+	'2603':"7",
+	'2604':"8",
+	'2655':"8",
+	'2661':"6",
+	'2662':"7",
+	'2663':"7",
+	'2664':"6",
+	'2665':"5",
+	'2693':"4",
+	'3010':"7",
+	'3020':"9",
+	'3030':"3",
+	'3066':"4",
+	'3067':"4",
+	'3069':"3",
+	'3070':"5",
+	'3073':"7",
+	'3074':"9",
+	'3075':"2",
+	'3076':"10",
+	'3077':"3",
+	'3079':"4" };
+    
+    var filter_data = sorted_data.forEach(function(d){
+	if(d[2] == crimes_date){
+	    crimes_count++;
+	    if(d[21] == "F"){
+		crimes_women_count++;
+	    }
+	    else if(d[21] == "M"){
+		crimes_men_count++;
+	    }
+	    else if(d[21] == "U"){
+		crimes_unknown_count++;
+	    }
+	    if(d[8]){
+		crimes_level_per_day += parseInt(offence_codes[d[8]]);
+	    }
+	}
+	
+	else{
+	    tmp={};
+	    tmp["date"] = d[2];
+	    tmp["crimes_count"] = crimes_count;
+	    tmp["crimes_women_count"] = crimes_women_count;
+	    tmp["crimes_men_count"] = crimes_men_count;
+	    tmp["crimes_unknown_count"] = crimes_unknown_count;
+	    tmp["crimes_level_score"] = Math.floor(crimes_level_per_day/average_crimes_count);
+	    if(isNaN(tmp["crimes_level_score"])){
+		tmp["crimes_level_score"] = Math.random()*10;
+	    }
+	    if(crimes_men_count > crimes_women_count){
+		color = "#8a0b0b";
+	    }
+	    else if(crimes_men_count < crimes_women_count){
+		color = "#860a6b";
+	    }
+	    tmp["circle_color"] = color;
+	    crimes_count = 0;
+	    crimes_level_per_day = 0;
+	    crimes_men_count = 0;
+	    crimes_women_count = 0;
+	    crimes_underage_count =0;
+	    crimes_date = d[2];
+	    crimes_per_day.push(tmp);
+	}
+    });
+
+    var svg = d3.select("svg"),
+	margin = {top: 50, right: 30, bottom: 30, left: 50},
+	width = +svg.attr("width") - margin.left - margin.right,
+	height = +svg.attr("height") - margin.top - margin.bottom,
+	g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var x = d3.scaleTime()
+	.range([0, width]);
+    var y = d3.scaleLinear()
+	.domain([10,1])
+	.range([0, height]);
+
+    var yAxis = d3.axisLeft(y);
+    var xAxis = d3.axisBottom(x);
+
+    var xAxisG = g.append("g")
+	.attr("transform", "translate(0, " + height + ")")
+	.style("font-size","13px");;
+    var yAxisG = g.append("g")
+	.attr("transform", "translate(0, " - height + ")")
+	.attr("class", "axis")
+	.style("font-size", "20px")
+	.call(yAxis);
+
+    var now = new Date('2014-01-07T18:00:00');
+    var current = new Date(crimes_per_day[0]["date"]);
+    var prev = new Date('2014-01-01T00:00:00');
+    var count = 0;
+    var node_count = 0;
+    var seconds = 86400000;
+    var days = 0;
+    
+    x.domain([now, prev]);
+    xAxisG.call(xAxis);
+
+    d3.interval(function() {	
+	if(current > prev && current < now){
+	    createCircle(current, crimes_per_day[node_count]);
+	    node_count++;
+	    current = new Date(crimes_per_day[node_count]["date"]);
+	}
+	else{
+/*	    console.log("CURRENT:", current);
+	    console.log("NOW:", now);
+	    console.log("PREVIOUS", prev);
+*/	}
+	if(count == 7){
+   	    prev = new Date(prev.getTime() + seconds);
+	    now = new Date(now.getTime() + seconds);
+	    count=0;
+	}
+	x.domain([prev, now]);
+	xAxisG.call(xAxis);
+	count++;
+	days++;
+	displayMonth(current.getMonth());
+    },100);
+
+    function displayMonth(month){
+	document.getElementById("month").innerHTML = map[month];
+	if(month == undefined){
+	    document.getElementById("month").innerHTML = map[12];
+	}
+    }
+    
+    function createCircle(current, crimes_parameters){
+	var circle = g.append("circle")
+           .attr("r", 70)
+            .attr("stroke-opacity", 1)
+	    .style("fill", crimes_parameters["circle_color"])
+	    .style("opacity", 1 - parseInt(crimes_parameters["crimes_level_score"])/10)
+	    .style("stroke", "black")
+	    .attr("cy", parseInt(crimes_parameters["crimes_level_score"])*height/10);
+
+	circle.transition("time")
+           .duration(5000)
+           .ease(d3.easeLinear)
+            .attrTween("cx", function(d){ return function(t) { return x(current); }});;
+   
+       circle.transition()
+           .duration(750)
+           .ease(d3.easeCubicOut)
+           .attr("r", crimes_parameters["crimes_count"]/10)
+           .attr("stroke-opacity", 1)
+	   .transition()
+           .delay(5000)
+           .ease(d3.easeCubicIn)
+           .attr("stroke-opacity", 0)
+           .remove();
+    }
+});
+  
+</script>
+</html>
